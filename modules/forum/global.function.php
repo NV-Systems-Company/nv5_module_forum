@@ -3,8 +3,262 @@
 if (! defined('NV_MAINFILE')) {
     die('Stop!!!');
 }
+define('NV_FORUM_GLOBALTABLE', $db_config['prefix'] . '_' . $module_name);
+require_once NV_ROOTDIR . '/modules/' . $module_file . '/ip.php';
+/**
+ * This detects if a serialized string may contain an object definition.
+ * This can trigger a false positive if a string matches the format but it should be unlikely.
+ *
+ * This function could be implemented with a single, one-line regex but it has been optimized, particularly
+ * for the case that no object or object-like construct is present.
+ *
+ * @param string $serialized
+ *
+ * @return bool
+ */
+function serializedContainsObject( $serialized )
+{
+	if( strpos( $serialized, 'O:' ) !== false && preg_match( '#(?<=^|[;{}])O:[+-]?[0-9]+:"#', $serialized ) )
+	{
+		return true;
+	}
 
+	if( strpos( $serialized, 'C:' ) !== false && preg_match( '#(?<=^|[;{}])C:[+-]?[0-9]+:"#', $serialized ) )
+	{
+		return true;
+	}
+
+	if( strpos( $serialized, 'o:' ) !== false && preg_match( '#(?<=^|[;{}])o:[+-]?[0-9]+:"#', $serialized ) )
+	{
+		return true;
+	}
+
+	return false;
+}
+
+function safeUnserialize( $serialized )
+{
+	if( PHP_VERSION_ID >= 70000 )
+	{
+		// PHP 7 has an option to disable unserializing objects, so use that if available
+		return @unserialize( $serialized, array( 'allowed_classes' => false ) );
+	}
+
+	if( serializedContainsObject( $serialized ) )
+	{
+		return false;
+	}
+
+	return @unserialize( $serialized );
+}
+
+/**
+ * Serializes a string only if it doesn't contain object constructs. This can be paired with safeUnserialize
+ * to block the serialization if unserialization will fail anyway. (Serialization itself is safe, but if it's going
+ * to fail to unserialize, it likely shouldn't be allowed.)
+ *
+ * See serializedContainsObject for comments on false positives.
+ *
+ * @param string $toSerialize
+ *
+ * @return string
+ */
+function safeSerialize( $toSerialize )
+{
+	$serialized = serialize( $toSerialize );
+
+	if( serializedContainsObject( $serialized ) )
+	{
+		throw new InvalidArgumentException( "Serialized value contains an object and this is not allowed" );
+	}
+
+	return $serialized;
+}
+
+
+
+
+
+/* 
+$data =  implode(',', array_map('add_quotes', $array ) );
+*/
+function add_quotes( $str ) 
+{
+	global $db;
+	
+    return $db->quote( $str );
+}
  
+function deleteGlobalUser( $userid )
+{
+	global $db;
+	
+	$db->query( 'UPDATE ' . NV_GROUPS_GLOBALTABLE . ' SET numbers = numbers-1 WHERE group_id IN (SELECT group_id FROM ' . NV_GROUPS_GLOBALTABLE . '_users WHERE userid=' . $userid . ')' );
+	$db->query( 'UPDATE ' . NV_GROUPS_GLOBALTABLE . ' SET numbers = numbers-1 WHERE group_id=4' );	
+	
+	$db->query( 'DELETE FROM ' . NV_GROUPS_GLOBALTABLE . '_users WHERE userid=' . $userid );
+	
+	$db->query( 'DELETE FROM ' . NV_USERS_GLOBALTABLE . '_openid WHERE userid=' . $userid );
+	$db->query( 'DELETE FROM ' . NV_USERS_GLOBALTABLE . '_info WHERE userid=' . intval( $userid ) );
+	$db->query( 'DELETE FROM ' . NV_USERS_GLOBALTABLE . '_option WHERE userid=' . intval( $userid ) );
+	$db->query( 'DELETE FROM ' . NV_USERS_GLOBALTABLE . '_privacy WHERE userid=' . intval( $userid ) );
+	$db->query( 'DELETE FROM ' . NV_USERS_GLOBALTABLE . ' WHERE userid=' . intval( $userid ) );
+	
+	$db->query( 'DELETE FROM ' . NV_FORUM_GLOBALTABLE . '_permission_combination WHERE userid=' . intval( $userid ) );
+	
+}
+
+
+function getOutputJson( $json )
+{
+	header( 'Content-Type: application/json' );
+	include NV_ROOTDIR . '/includes/header.php';
+	echo json_encode( $json );
+	include NV_ROOTDIR . '/includes/footer.php';
+}
+
+
+function sortArrayByArray( array $toSort, array $sortByValuesAsKeys )
+{
+	$commonKeysInOrder = array_intersect_key( array_flip( $sortByValuesAsKeys ), $toSort );
+	$commonKeysWithValue = array_intersect_key( $toSort, $commonKeysInOrder );
+	$sorted = array_merge( $commonKeysInOrder, $commonKeysWithValue );
+	return $sorted;
+}
+ 
+function forum_insert_logs( $userid, $content_id, $content_type, $action )
+{
+	global $db, $client_info;
+	$ipAddress = (string) convertIpStringToBinary($client_info['ip']);
+	$db->query( 'INSERT INTO '. NV_FORUM_GLOBALTABLE .'_ip (userid, content_type, content_id, action, ip, log_date) VALUES ('. intval( $userid ) .', '. $db->quote( $content_type ) .', '. intval( $content_id ) .', '. $db->quote( $action ) .', '. $db->quote( $ipAddress ) .', '. intval( NV_CURRENTTIME ) .')' );
+	return $db->lastInsertId();
+}
+ 
+function users_change_log( $userid, $edit_userid, $field, $old_value, $new_value )
+{
+	global $db;
+	$db->query( 'INSERT INTO ' . NV_USERS_GLOBALTABLE . '_change_log (userid, edit_userid, edit_date, field, old_value, new_value) VALUES ('. intval( $userid ) .', '. intval( $edit_userid ) .', '. NV_CURRENTTIME .', '.$db->quote( $field ).', '. $db->quote( $old_value ) .', '. $db->quote( $new_value ) .')');	 
+}
+
+
+function updateSessionActivity( $userid, $action, $viewState, array $inputParams, $viewDate = null, $robotKey = '' )
+{
+
+	global $db, $client_info;
+
+	$userid = intval( $userid );
+	$ipNum = getBinaryIp( null, $client_info['ip'], '' );
+	$uniqueKey = ( $userid ? $userid : $ipNum );
+
+	if( $userid )
+	{
+		$robotKey = '';
+	}
+
+	if( ! $viewDate )
+	{
+		$viewDate = NV_CURRENTTIME;
+	}
+
+	$logParams = array();
+	foreach( $inputParams as $paramKey => $paramValue )
+	{
+		if( ! strlen( $paramKey ) || $paramKey[0] == '_' || ! is_scalar( $paramValue ) )
+		{
+			continue;
+		}
+
+		$logParams[] = "$paramKey=" . urlencode( $paramValue );
+	}
+	$paramList = implode( '&', $logParams );
+	$paramList = substr( $paramList, 0, 100 );
+	$action = substr($action, 0, 50);
+	try
+	{
+		$ipNum = (string) convertIpStringToBinary( $client_info['ip'] );
+		$stmt = $db->prepare('
+			INSERT INTO ' . NV_FORUM_GLOBALTABLE . '_session_activity
+					(userid, unique_key, ip, action, view_state, params, view_date, robot_key)
+				VALUES
+					(?, ?, ?, ?, ?, ?, ?, ?)
+				ON DUPLICATE KEY UPDATE
+					ip = VALUES(ip),
+					action = VALUES(action),
+					view_state = VALUES(view_state),
+					params = VALUES(params),
+					view_date = VALUES(view_date),
+					robot_key = VALUES(robot_key)');
+
+		$stmt->execute( array( $userid, $uniqueKey, $ipNum, $action, $viewState, $paramList, $viewDate, $robotKey ) );
+	}
+	catch ( PDOException $e )
+	{
+		 //var_dump( $e );
+		 
+		 
+	}
+
+}
+
+function deleteSessionActivity($userId, $ip)
+{
+	global $db;
+	
+	$userId = intval($userId);
+	
+	$ipNum =  convertIpStringToBinary($ip);
+	
+	$uniqueKey = ($userId ? $userId : $ipNum);
+ 
+	$db->query('DELETE FROM ' . NV_FORUM_GLOBALTABLE . '_session_activity WHERE userid = ' . $db->quote($userId) . ' AND unique_key = ' . $db->quote($uniqueKey) );
+}
+ 
+/* Permision file*/
+function hasPermission( array $permissions, $group, $permission )
+{
+	if( isset( $permissions[$group], $permissions[$group][$permission] ) )
+	{
+		return $permissions[$group][$permission];
+	}
+	else
+	{
+		return false;
+	}
+}
+
+function hasContentPermission( array $contentPermissions, $permission )
+{
+	if( isset( $contentPermissions[$permission] ) )
+	{
+		if( is_array( $contentPermissions[$permission] ) )
+		{
+			throw new Exception( 'Unexpected sub-array found in content permissions; looks more like global permissions' );
+		}
+
+		return $contentPermissions[$permission];
+	}
+	else
+	{
+		return false;
+	}
+}
+
+function unserializePermissions( $permissionString )
+{
+	if( $permissionString && ! is_array( $permissionString ) )
+	{
+		$permissions = @unserialize( $permissionString );
+		if( is_array( $permissions ) )
+		{
+			return $permissions;
+		}
+	}
+
+	return array();
+}
+/* Permision file*/
+
+/* Post file */ 
 function deleteCache( $part, $module )
 {
 	//array('cat', setting)

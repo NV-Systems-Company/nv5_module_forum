@@ -12,7 +12,6 @@ if( ! defined( 'NV_IS_MOD_FORUM' ) ) die( 'Stop!!!' );
 
  
 $generalPermissions = $forumData = array();
-
 if( ! defined( 'NV_IS_USER' ) )
 {
 	/* Nhom khach truy cap => 5 */
@@ -26,7 +25,7 @@ if( ! defined( 'NV_IS_USER' ) )
 else
 {
 	/* Nhom thanh vien truy cap => 4 */
-	$permission_combination_id = $user_info['permission_combination_id'];
+	$permission_combination_id = $user_info['group_id'];
 	$generalPermissions = unserializePermissions( $user_info['global_permission_cache'] );
 }
  

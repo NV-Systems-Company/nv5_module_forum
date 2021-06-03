@@ -164,8 +164,8 @@ if( sizeof( $array_op ) == 2 || ( isset( $array_op[2] ) and substr( $array_op[2]
 				   0 AS like_date
 			FROM ' . NV_FORUM_GLOBALTABLE . '_post AS post
 			LEFT JOIN ' . NV_USERS_GLOBALTABLE . ' AS user ON (user.userid = post.userid)
-			LEFT JOIN ' . NV_USERS_GLOBALTABLE . '_profile AS user_profile ON (user_profile.userid = post.userid)
-			LEFT JOIN ' . NV_USERS_GLOBALTABLE . '_privacy AS user_privacy ON (user_privacy.userid = post.userid)
+			LEFT JOIN ' . NV_FORUM_GLOBALTABLE . '_users_profile AS user_profile ON (user_profile.userid = post.userid)
+			LEFT JOIN ' . NV_FORUM_GLOBALTABLE . '_users_privacy AS user_privacy ON (user_privacy.userid = post.userid)
 			WHERE post.thread_id = ' . $threadData['thread_id'] . '
 				AND (post.position >= 0
 				AND post.position < 20)

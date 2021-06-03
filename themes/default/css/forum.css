@@ -1,4 +1,99 @@
-.xenForm .ctrlUnit > dt {
+ 
+.forum-tms{ 
+	position: relative;
+	display: inline-block;  
+	width: 100%; 
+	background: rgb(253, 253, 253);
+    border-top: 1px solid rgb(232, 232, 232);}
+ .forum-tms-lev2{ border-top: 0px;}   
+    
+.lastpost {
+    background-color: rgb(252, 252, 252);
+    padding: 10px;
+    border-bottom: 1px solid rgb(239, 239, 239);
+    font-size: 13px;
+    border: 1px solid rgb(239, 239, 239);
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    -khtml-border-radius: 3px;
+    border-radius: 3px;   
+    line-height: 17px;
+    white-space: nowrap;
+    word-wrap: normal;
+    overflow: hidden;
+    min-height: 40px; 
+}    
+    
+
+.forum-col1,.forum-col2{float: left; padding: 5px;}
+.forum-col1{width: 75%;}
+.forum-col2{width: 25%;}
+.forum-left,.forum-right{float: left; padding: 5px;}
+.forum-left{width: 60%;}
+.forum-right{width: 40%;}
+.forum-icon{margin: 10px 0 10px 10px; float: left;text-align: center;width: 38px; }
+.forum-title{float: left; display: block }
+.thongke-forum dl {
+    float: left;
+    display: block;
+    margin-right: 3px;
+}
+
+.node-forum-noidung-tieude,.node-forum-noidung-thongke,.node-forum-noidung-thaoluan,.node-forum-tieude,.node-forum-thongke,.node-forum-thaoluan{float: left; padding: 5px; }
+.node-forum-tieude{width: 50%;height: 30px;}
+.node-forum-thongke{width: 20%;  text-align: center}
+.node-forum-thaoluan{width: 30%; text-align: right}
+.node-forum-noidung-tieude{width: 50%;}
+.node-forum-noidung-thongke{width: 20%;  border-left: 1px solid rgb(216,216,216); text-align: center}
+.node-forum-noidung-thaoluan{width: 30%;border-left: 1px solid rgb(216,216,216); text-align: right}
+.node-forum-noidung-icon{ float: left;text-align: center;width: 50px;height: 50px; margin-right: 10px;}
+.node-forum-tms{ 
+	position: relative;
+	display: inline-block;  
+	width: 100%; padding: 5px;
+	background: rgb(253, 253, 253);
+    border-top: 1px solid rgb(232, 232, 232);}
+
+.forum-block-register {
+    background-color: rgb(252,252,252);
+    padding: 10px;
+    border: 1px solid rgb(239,239,239);
+    margin-bottom: 20px;
+}
+.forum-block-register-pnm {
+    background-color: rgb(245,245,245);
+    padding: 3px;
+    margin: 10px 30px;
+    border: 1px solid rgb(152,12,12);
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    -khtml-border-radius: 5px;
+    border-radius: 5px;
+    text-align: center;
+    line-height: 30px;
+    -webkit-box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    -moz-box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    -khtml-box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: block;
+    cursor: pointer;
+    height: 38px;
+}
+.forum-block-register-pnm  .inner {
+    font-weight: bold;
+    font-size: 17px;
+    color: rgb(243,243,243);
+    background-color: rgb(152,12,12);
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    -khtml-border-radius: 3px;
+    border-radius: 3px;
+    display: block;
+    text-shadow: 0 0 0 transparent,0px 0 3px rgba(0,0,0,0.5);
+}
+
+
+m.xenForm .ctrlUnit > dt {
     padding-top: 4px;
     padding-right: 15px;
     text-align: right;

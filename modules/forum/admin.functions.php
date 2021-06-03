@@ -11,13 +11,14 @@
 if( ! defined( 'NV_ADMIN' ) or ! defined( 'NV_MAINFILE' ) or ! defined( 'NV_IS_MODADMIN' ) ) die( 'Stop!!!' );
 
 $admin_id = $admin_info['userid'];
- 
+
+define( 'ACTION_METHOD', $nv_Request->get_string( 'action', 'get,post', '' ) ); 
  
 
-require_once NV_ROOTDIR . '/includes/forum/model/node.php';
-require_once NV_ROOTDIR . '/includes/forum/model/users.php';
-require_once NV_ROOTDIR . '/includes/forum/model/permission.php';
-require_once NV_ROOTDIR . '/includes/forum/model/moderator.php'; 
+require_once NV_ROOTDIR . '/modules/' . $module_file . '/includes/forum/model/node.php';
+require_once NV_ROOTDIR . '/modules/' . $module_file . '/includes/forum/model/users.php';
+require_once NV_ROOTDIR . '/modules/' . $module_file . '/includes/forum/model/permission.php';
+require_once NV_ROOTDIR . '/modules/' . $module_file . '/includes/forum/model/moderator.php'; 
 require_once NV_ROOTDIR . '/modules/' . $module_file . '/global.function.php';
  
 $array_status = array( 
